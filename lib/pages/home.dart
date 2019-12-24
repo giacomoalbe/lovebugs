@@ -8,7 +8,10 @@ import 'package:flutter_rounded_progress_bar/rounded_progress_bar_style.dart';
 
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../partials/add_tile_dialog.partial.dart';
+
 import '../models/tile.dart';
+import '../models/category.dart';
 
 enum ViewMode { LIST, GRID }
 enum GridMode { VIEW, ADD }
@@ -115,7 +118,13 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  void addSelectionToGrid({bool isAdd = true}) {
+  void saveTileContent(Tile tile, String note, Category category) {
+    tile.saved = true;
+    tile.category = category;
+    tile.text = note;
+  }
+
+  void addSelectionToGrid({String note, Category category, bool isAdd = true}) {
     if (isAdd) {
       var minCol = colSelected.toList().reduce(min);
       var maxCol = colSelected.toList().reduce(max);
@@ -130,7 +139,7 @@ class HomePageState extends State<HomePage> {
 
       tile = tiles.where((t) => t.col == minCol && t.row == minRow).toList()[0];
 
-      tile.saved = true;
+      saveTileContent(tile, note, category);
 
       setTileSize(tile, minRow, minCol, width, height);
 
@@ -148,25 +157,67 @@ class HomePageState extends State<HomePage> {
     cancelAdd();
   }
 
+  void checkSelectionIsOk(Tile currentTile) {
+    int selectedTiles = 0;
+
+    currentTile.selected = !currentTile.selected;
+
+    var isRowSelected = false;
+    var isColSelected = false;
+
+    tiles.forEach((tile) {
+      if (tile.row == currentTile.row) {
+        isRowSelected = isRowSelected || tile.selected;
+      }
+
+      if (tile.col == currentTile.col) {
+        isColSelected = isColSelected || tile.selected;
+      }
+
+      if (tile.selected) {
+        selectedTiles += 1;
+      }
+    });
+
+    if (isColSelected) {
+      colSelected.add(currentTile.col);
+    } else {
+      colSelected.remove(currentTile.col);
+    }
+
+    if (isRowSelected) {
+      rowSelected.add(currentTile.row);
+    } else {
+      rowSelected.remove(currentTile.row);
+    }
+
+    var colSelectedList = colSelected.toList() ?? [];
+    var rowSelectedList = rowSelected.toList() ?? [];
+
+    var colSpan = 0;
+    var rowSpan = 0;
+
+    if (colSelectedList.length > 0) {
+      colSpan = colSelectedList.reduce(max) - colSelectedList.reduce(min) + 1;
+    }
+
+    if (rowSelectedList.length > 0) {
+      rowSpan = rowSelectedList.reduce(max) - rowSelectedList.reduce(min) + 1;
+    }
+
+    selectionIsOk = colSpan * rowSpan == selectedTiles;
+  }
+
   Widget build(BuildContext context) {
     final viewBottomBar = Row(
       children: <Widget>[
-        IconButton(
-            color: Colors.red,
-            onPressed: () {
-              print("help");
-            },
-            icon: Icon(
-              Icons.help_outline,
-              color: Colors.white,
-            )),
         Expanded(
           child: RoundedProgressBar(
             //theme: RoundedProgressBarTheme.green,
             childCenter: Text(
               "$tilesPercent %",
               style: TextStyle(
-                color: Color(0xff27ae60),
+                color: Color(0xff333333),
                 fontSize: 18.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -182,17 +233,6 @@ class HomePageState extends State<HomePage> {
             percent: tilesPercent,
           ),
         ),
-        IconButton(
-            onPressed: () {
-              setState(() {
-                gridMode =
-                    gridMode == GridMode.ADD ? GridMode.VIEW : GridMode.ADD;
-              });
-            },
-            icon: Icon(
-              gridMode == GridMode.ADD ? Icons.view_list : Icons.add,
-              color: Colors.white,
-            )),
       ],
     );
 
@@ -232,7 +272,26 @@ class HomePageState extends State<HomePage> {
             highlightElevation: 0,
             splashColor: Colors.transparent,
             hoverColor: Colors.transparent,
-            onPressed: selectionIsOk ? addSelectionToGrid : null,
+            onPressed: selectionIsOk
+                ? () async {
+                    await showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AddTileDialog(
+                            onDispose: (result, message, category) {
+                              if (result) {
+                                addSelectionToGrid(
+                                    note: message, category: category);
+                              } else {
+                                addSelectionToGrid(isAdd: false);
+                              }
+
+                              Navigator.of(context).pop();
+                            },
+                          );
+                        });
+                  }
+                : null,
             color: Colors.green,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -254,17 +313,16 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: Text("LoveBugs"),
+          title: Text("LoveTile"),
           actions: <Widget>[
             IconButton(
                 onPressed: () {
                   setState(() {
-                    mode =
-                        mode == ViewMode.GRID ? ViewMode.LIST : ViewMode.GRID;
+                    gridMode =
+                        gridMode == GridMode.ADD ? GridMode.VIEW : GridMode.ADD;
                   });
                 },
-                icon: Icon(
-                    mode == ViewMode.GRID ? Icons.dashboard : Icons.view_list))
+                icon: Icon(FontAwesomeIcons.plusCircle))
           ],
         ),
         body: Column(
@@ -311,76 +369,35 @@ class HomePageState extends State<HomePage> {
                             break;
 
                           case GridMode.VIEW:
-                            tileColor = idleColor;
-                            tileIcon = idleIcon;
+                            if (currentTile.saved) {
+                              tileColor = currentTile.category.color;
+                              tileIcon = currentTile.category.icon;
+                            } else {
+                              tileColor = idleColor;
+                              tileIcon = idleIcon;
+                            }
                             break;
                         }
 
                         return InkWell(
-                          onTap: () {
-                            if (gridMode == GridMode.VIEW) {
-                              return;
-                            }
-
+                          onTap: () async {
                             if (currentTile.saved) {
                               // Cannot select an already saved tile
-                              return;
-                            }
-
-                            int selectedTiles = 0;
-
-                            currentTile.selected = !currentTile.selected;
-
-                            var isRowSelected = false;
-                            var isColSelected = false;
-
-                            tiles.forEach((tile) {
-                              if (tile.row == currentTile.row) {
-                                isRowSelected = isRowSelected || tile.selected;
-                              }
-
-                              if (tile.col == currentTile.col) {
-                                isColSelected = isColSelected || tile.selected;
-                              }
-
-                              if (tile.selected) {
-                                selectedTiles += 1;
-                              }
-                            });
-
-                            if (isColSelected) {
-                              colSelected.add(currentTile.col);
+                              await showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AddTileDialog(
+                                      readonly: true,
+                                      tile: currentTile,
+                                      onDispose: (result, message, category) {
+                                        Navigator.of(context).pop();
+                                      },
+                                    );
+                                  });
                             } else {
-                              colSelected.remove(currentTile.col);
+                              checkSelectionIsOk(currentTile);
+                              setState(() {});
                             }
-
-                            if (isRowSelected) {
-                              rowSelected.add(currentTile.row);
-                            } else {
-                              rowSelected.remove(currentTile.row);
-                            }
-
-                            var colSelectedList = colSelected.toList() ?? [];
-                            var rowSelectedList = rowSelected.toList() ?? [];
-
-                            var colSpan = 0;
-                            var rowSpan = 0;
-
-                            if (colSelectedList.length > 0) {
-                              colSpan = colSelectedList.reduce(max) -
-                                  colSelectedList.reduce(min) +
-                                  1;
-                            }
-
-                            if (rowSelectedList.length > 0) {
-                              rowSpan = rowSelectedList.reduce(max) -
-                                  rowSelectedList.reduce(min) +
-                                  1;
-                            }
-
-                            selectionIsOk = colSpan * rowSpan == selectedTiles;
-
-                            setState(() {});
                           },
                           child: Container(
                             decoration: BoxDecoration(

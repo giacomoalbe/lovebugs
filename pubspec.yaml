@@ -1,5 +1,5 @@
-name: lovebugs
-description: A new Flutter project.
+name: lovetile
+description: Una App per farsi perdonare i momenti brutti
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -17,6 +17,7 @@ environment:
   sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
+  intl: ^0.16.0
   flutter_rounded_progress_bar: ^0.1.2
   font_awesome_flutter: ^8.5.0
   dotted_border: ^1.0.4
