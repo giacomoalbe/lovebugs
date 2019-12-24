@@ -2,6 +2,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:flutter_rounded_progress_bar/flutter_icon_rounded_progress_bar.dart';
+import 'package:flutter_rounded_progress_bar/flutter_rounded_progress_bar.dart';
+import 'package:flutter_rounded_progress_bar/rounded_progress_bar_style.dart';
 
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -22,8 +25,9 @@ class HomePageState extends State<HomePage> {
 
   bool selectionIsOk = true;
 
-  int maxTilesNumber = 20;
+  int maxTilesNumber = 100;
   int gridColumns = 4;
+  double tilesPercent = 0;
 
   List<bool> gridModel;
   List<Tile> tiles;
@@ -129,6 +133,16 @@ class HomePageState extends State<HomePage> {
       tile.saved = true;
 
       setTileSize(tile, minRow, minCol, width, height);
+
+      int savedTilesArea = 0;
+
+      tiles.forEach((t) {
+        if (t.saved) {
+          savedTilesArea += t.width * t.height;
+        }
+      });
+
+      tilesPercent = (savedTilesArea / maxTilesNumber * 100.0).round() * 1.0;
     }
 
     cancelAdd();
@@ -138,6 +152,7 @@ class HomePageState extends State<HomePage> {
     final viewBottomBar = Row(
       children: <Widget>[
         IconButton(
+            color: Colors.red,
             onPressed: () {
               print("help");
             },
@@ -145,7 +160,28 @@ class HomePageState extends State<HomePage> {
               Icons.help_outline,
               color: Colors.white,
             )),
-        Spacer(),
+        Expanded(
+          child: RoundedProgressBar(
+            //theme: RoundedProgressBarTheme.green,
+            childCenter: Text(
+              "$tilesPercent %",
+              style: TextStyle(
+                color: Color(0xff27ae60),
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            style: RoundedProgressBarStyle(
+              borderWidth: 0,
+              widthShadow: 0,
+              colorProgress: Color(0xff2ecc71),
+              colorProgressDark: Color(0xff27ae60),
+              colorBorder: Color(0xff2980b9),
+            ),
+            borderRadius: BorderRadius.circular(15),
+            percent: tilesPercent,
+          ),
+        ),
         IconButton(
             onPressed: () {
               setState(() {

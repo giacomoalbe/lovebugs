@@ -17,6 +17,7 @@ environment:
   sdk: ">=2.1.0 <3.0.0"
 
 dependencies:
+  flutter_rounded_progress_bar: ^0.1.2
   font_awesome_flutter: ^8.5.0
   dotted_border: ^1.0.4
   flutter_staggered_grid_view: ^0.3.0
