@@ -38,7 +38,6 @@ class AddTileDialogState extends State<AddTileDialog> {
     formIsValid = selectedCategory != null && note != "";
 
     if (widget.tile != null) {
-      print(widget.tile.text);
       textController.text = widget.tile.text;
       note = widget.tile.text;
       selectedCategory = widget.tile.category;

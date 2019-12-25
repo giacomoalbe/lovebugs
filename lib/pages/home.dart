@@ -27,6 +27,7 @@ class HomePageState extends State<HomePage> {
   GridMode gridMode;
 
   bool selectionIsOk = true;
+  bool isLoading = true;
 
   int maxTilesNumber = Tile.MAX_TILES_NUMBER;
   int gridColumns = Tile.GRID_COLUMNS;
@@ -62,7 +63,9 @@ class HomePageState extends State<HomePage> {
 
       initData();
 
-      setState(() {});
+      setState(() {
+        isLoading = false;
+      });
     });
   }
 
@@ -304,6 +307,17 @@ class HomePageState extends State<HomePage> {
       ],
     );
 
+    final loadingWidget = Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          CircularProgressIndicator(),
+          SizedBox(height: 20.0),
+          Text("Caricamento..."),
+        ],
+      ),
+    );
+
     return Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -311,6 +325,10 @@ class HomePageState extends State<HomePage> {
           actions: <Widget>[
             IconButton(
                 onPressed: () {
+                  if (isLoading) {
+                    return;
+                  }
+
                   setState(() {
                     gridMode =
                         gridMode == GridMode.ADD ? GridMode.VIEW : GridMode.ADD;
@@ -319,120 +337,127 @@ class HomePageState extends State<HomePage> {
                 icon: Icon(FontAwesomeIcons.plusCircle))
           ],
         ),
-        body: Column(
-          children: <Widget>[
-            Expanded(
-                child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 5.0,
-                      vertical: 5.0,
-                    ),
-                    child: StaggeredGridView.countBuilder(
-                      crossAxisCount: gridColumns,
-                      itemCount: tiles.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        Color tileColor;
-                        IconData tileIcon;
-
-                        Tile currentTile = tiles[index];
-
-                        switch (gridMode) {
-                          case GridMode.ADD:
-                            if (currentTile.selected) {
-                              if (selectionIsOk) {
-                                tileColor = selectedColor;
-                                tileIcon = selectedIcon;
-                              } else {
-                                tileColor = invalidColor;
-                                tileIcon = invalidIcon;
-                              }
-                            } else {
-                              if (currentTile.saved) {
-                                tileColor = alreadyTakenColor;
-                                tileIcon = alreadyTakenIcon;
-                              } else {
-                                // Here is addable
-                                tileColor = addbleColor;
-                                tileIcon = addbleIcon;
-                              }
-                            }
-
-                            break;
-
-                          case GridMode.VIEW:
-                            if (currentTile.saved) {
-                              tileColor = currentTile.category.color;
-                              tileIcon = currentTile.category.icon;
-                            } else {
-                              tileColor = idleColor;
-                              tileIcon = idleIcon;
-                            }
-                            break;
-                        }
-
-                        return InkWell(
-                          onTap: () async {
-                            if (currentTile.saved) {
-                              // Cannot select an already saved tile
-                              await showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return AddTileDialog(
-                                      readonly: true,
-                                      tile: currentTile,
-                                      onDispose: (result, message, category) {
-                                        Navigator.of(context).pop();
-                                      },
-                                    );
-                                  });
-                            } else {
-                              checkSelectionIsOk(currentTile);
-                              setState(() {});
-                            }
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              //color: tileColor?.withOpacity(0.8),
-                              color: tileColor,
-                              borderRadius: BorderRadius.circular(15.0),
-                              border: Border.all(
-                                width: 4,
-                                color: tileColor,
-                              ),
-                            ),
-                            padding: EdgeInsets.all(6),
-                            child: Center(
-                              child: Container(
-                                width: 50.0,
-                                height: 50.0,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(25.0),
-                                    color: Colors.white,
-                                    border: Border.all(
-                                      color: tileColor,
-                                      width: 4.0,
-                                    )),
-                                child: Center(
-                                  child: Icon(tileIcon, color: tileColor),
-                                ),
-                              ),
-                            ),
+        body: isLoading
+            ? loadingWidget
+            : Column(
+                children: <Widget>[
+                  Expanded(
+                      child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 5.0,
+                            vertical: 5.0,
                           ),
-                        );
-                      },
-                      staggeredTileBuilder: (int index) {
-                        Tile tile = tiles[index];
+                          child: StaggeredGridView.countBuilder(
+                            crossAxisCount: gridColumns,
+                            itemCount: tiles.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              Color tileColor;
+                              IconData tileIcon;
 
-                        return new StaggeredTile.count(tile.width, tile.height);
-                      },
-                      mainAxisSpacing: 10.0,
-                      crossAxisSpacing: 10.0,
-                    ))),
-            Container(
-                padding: EdgeInsets.all(10.0),
-                color: Colors.blue,
-                child: gridMode == GridMode.ADD ? addBottomBar : viewBottomBar)
-          ],
-        ));
+                              Tile currentTile = tiles[index];
+
+                              switch (gridMode) {
+                                case GridMode.ADD:
+                                  if (currentTile.selected) {
+                                    if (selectionIsOk) {
+                                      tileColor = selectedColor;
+                                      tileIcon = selectedIcon;
+                                    } else {
+                                      tileColor = invalidColor;
+                                      tileIcon = invalidIcon;
+                                    }
+                                  } else {
+                                    if (currentTile.saved) {
+                                      tileColor = alreadyTakenColor;
+                                      tileIcon = alreadyTakenIcon;
+                                    } else {
+                                      // Here is addable
+                                      tileColor = addbleColor;
+                                      tileIcon = addbleIcon;
+                                    }
+                                  }
+
+                                  break;
+
+                                case GridMode.VIEW:
+                                  if (currentTile.saved) {
+                                    tileColor = currentTile.category.color;
+                                    tileIcon = currentTile.category.icon;
+                                  } else {
+                                    tileColor = idleColor;
+                                    tileIcon = idleIcon;
+                                  }
+                                  break;
+                              }
+
+                              return InkWell(
+                                onTap: () async {
+                                  if (currentTile.saved) {
+                                    // Cannot select an already saved tile
+                                    await showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AddTileDialog(
+                                            readonly: true,
+                                            tile: currentTile,
+                                            onDispose:
+                                                (result, message, category) {
+                                              Navigator.of(context).pop();
+                                            },
+                                          );
+                                        });
+                                  } else {
+                                    checkSelectionIsOk(currentTile);
+                                    setState(() {});
+                                  }
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    //color: tileColor?.withOpacity(0.8),
+                                    color: tileColor,
+                                    borderRadius: BorderRadius.circular(15.0),
+                                    border: Border.all(
+                                      width: 4,
+                                      color: tileColor,
+                                    ),
+                                  ),
+                                  padding: EdgeInsets.all(6),
+                                  child: Center(
+                                    child: Container(
+                                      width: 50.0,
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(25.0),
+                                          color: Colors.white,
+                                          border: Border.all(
+                                            color: tileColor,
+                                            width: 4.0,
+                                          )),
+                                      child: Center(
+                                        child: Icon(tileIcon, color: tileColor),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            staggeredTileBuilder: (int index) {
+                              Tile tile = tiles[index];
+
+                              return new StaggeredTile.count(
+                                  tile.width, tile.height);
+                            },
+                            mainAxisSpacing: 10.0,
+                            crossAxisSpacing: 10.0,
+                          ))),
+                  Container(
+                      padding: EdgeInsets.all(10.0),
+                      color: Colors.blue,
+                      child: gridMode == GridMode.ADD
+                          ? addBottomBar
+                          : viewBottomBar)
+                ],
+              ));
   }
 }
