@@ -28,11 +28,10 @@ class HomePageState extends State<HomePage> {
 
   bool selectionIsOk = true;
 
-  int maxTilesNumber = 100;
-  int gridColumns = 4;
+  int maxTilesNumber = Tile.MAX_TILES_NUMBER;
+  int gridColumns = Tile.GRID_COLUMNS;
   double tilesPercent = 0;
 
-  List<bool> gridModel;
   List<Tile> tiles;
 
   Color selectedColor = Colors.green;
@@ -56,27 +55,29 @@ class HomePageState extends State<HomePage> {
     mode = ViewMode.GRID;
     gridMode = GridMode.VIEW;
 
-    tiles = new List();
+    tiles = [];
 
-    for (var i = 0; i < maxTilesNumber; i++) {
-      int row = (i / gridColumns).floor();
-      int col = i % gridColumns;
+    Future.delayed(Duration.zero, () async {
+      tiles = await Tile.getTilesFromDisk();
 
-      tiles.add(Tile(
-        row: row,
-        col: col,
-        width: 1,
-        height: 1,
-      ));
-    }
+      initData();
 
-    initData();
+      setState(() {});
+    });
   }
 
   void initData() {
+    int savedTilesArea = 0;
+
     tiles.forEach((tile) {
       tile.selected = false;
+
+      if (tile.saved) {
+        savedTilesArea += tile.width * tile.height;
+      }
     });
+
+    tilesPercent = (savedTilesArea / maxTilesNumber * 100.0).round() * 1.0;
 
     rowSelected = new Set();
     colSelected = new Set();
@@ -90,7 +91,7 @@ class HomePageState extends State<HomePage> {
   }
 
   void deleteTile(int row, int col) {
-    var tileIndex = row * gridColumns + col;
+    int tileIndex = -1;
 
     tiles.asMap().forEach((index, tile) {
       if (tile.col == col && tile.row == row) {
@@ -124,7 +125,8 @@ class HomePageState extends State<HomePage> {
     tile.text = note;
   }
 
-  void addSelectionToGrid({String note, Category category, bool isAdd = true}) {
+  void addSelectionToGrid(
+      {String note, Category category, bool isAdd = true}) async {
     if (isAdd) {
       var minCol = colSelected.toList().reduce(min);
       var maxCol = colSelected.toList().reduce(max);
@@ -143,15 +145,7 @@ class HomePageState extends State<HomePage> {
 
       setTileSize(tile, minRow, minCol, width, height);
 
-      int savedTilesArea = 0;
-
-      tiles.forEach((t) {
-        if (t.saved) {
-          savedTilesArea += t.width * t.height;
-        }
-      });
-
-      tilesPercent = (savedTilesArea / maxTilesNumber * 100.0).round() * 1.0;
+      await Tile.saveTilesToDisk(tiles);
     }
 
     cancelAdd();
@@ -278,12 +272,12 @@ class HomePageState extends State<HomePage> {
                         context: context,
                         builder: (context) {
                           return AddTileDialog(
-                            onDispose: (result, message, category) {
+                            onDispose: (result, message, category) async {
                               if (result) {
-                                addSelectionToGrid(
+                                await addSelectionToGrid(
                                     note: message, category: category);
                               } else {
-                                addSelectionToGrid(isAdd: false);
+                                await addSelectionToGrid(isAdd: false);
                               }
 
                               Navigator.of(context).pop();
@@ -341,9 +335,6 @@ class HomePageState extends State<HomePage> {
                         IconData tileIcon;
 
                         Tile currentTile = tiles[index];
-
-                        //int row = (index / gridColumns).floor();
-                        //int col = index % gridColumns;
 
                         switch (gridMode) {
                           case GridMode.ADD:

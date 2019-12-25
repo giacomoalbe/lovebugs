@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class Category {
+  static int globalId = 0;
+  int id;
   String name;
   Color color;
   IconData icon;
+
+  Category({this.name, this.color, this.icon}) {
+    this.id = globalId++;
+  }
 
   static List<Category> getAll() {
     return [
@@ -50,6 +56,4 @@ class Category {
       ),
     ];
   }
-
-  Category({this.name, this.color, this.icon});
 }
