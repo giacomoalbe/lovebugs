@@ -11,7 +11,7 @@ part 'tile.g.dart';
 
 @JsonSerializable()
 class Tile {
-  static int MAX_TILES_NUMBER = 100;
+  static int MAX_TILES_NUMBER = 548;
   static int GRID_COLUMNS = 4;
 
   int row;

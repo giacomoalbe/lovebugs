@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:flutter_rounded_progress_bar/flutter_icon_rounded_progress_bar.dart';
 import 'package:flutter_rounded_progress_bar/flutter_rounded_progress_bar.dart';
 import 'package:flutter_rounded_progress_bar/rounded_progress_bar_style.dart';
 
@@ -33,6 +32,7 @@ class HomePageState extends State<HomePage> {
   int gridColumns = Tile.GRID_COLUMNS;
   double tilesPercent = 0;
 
+  int selectedTilesNumber = 0;
   List<Tile> tiles;
 
   Color selectedColor = Colors.green;
@@ -77,6 +77,7 @@ class HomePageState extends State<HomePage> {
 
       if (tile.saved) {
         savedTilesArea += tile.width * tile.height;
+        selectedTilesNumber = savedTilesArea;
       }
     });
 
@@ -207,6 +208,7 @@ class HomePageState extends State<HomePage> {
 
   Widget build(BuildContext context) {
     final viewBottomBar = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Expanded(
           child: RoundedProgressBar(
@@ -230,6 +232,16 @@ class HomePageState extends State<HomePage> {
             percent: tilesPercent,
           ),
         ),
+        SizedBox(width: 15.0),
+        Text(
+          "${selectedTilesNumber.toString().padLeft(3)}/${Tile.MAX_TILES_NUMBER}",
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(width: 10.0),
+        Icon(FontAwesomeIcons.thLarge, size: 18.0),
       ],
     );
 
@@ -320,8 +332,12 @@ class HomePageState extends State<HomePage> {
 
     return Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.white,
           centerTitle: true,
-          title: Text("LoveTile"),
+          title: Container(
+            height: AppBar().preferredSize.height * 0.65,
+            child: Image.asset("imgs/logotype.png", fit: BoxFit.fill),
+          ),
           actions: <Widget>[
             IconButton(
                 onPressed: () {
@@ -334,7 +350,10 @@ class HomePageState extends State<HomePage> {
                         gridMode == GridMode.ADD ? GridMode.VIEW : GridMode.ADD;
                   });
                 },
-                icon: Icon(FontAwesomeIcons.plusCircle))
+                icon: Icon(
+                  FontAwesomeIcons.plusCircle,
+                  color: Colors.green,
+                ))
           ],
         ),
         body: isLoading
@@ -348,6 +367,7 @@ class HomePageState extends State<HomePage> {
                             vertical: 5.0,
                           ),
                           child: StaggeredGridView.countBuilder(
+                            padding: EdgeInsets.all(8.0),
                             crossAxisCount: gridColumns,
                             itemCount: tiles.length,
                             itemBuilder: (BuildContext context, int index) {
@@ -393,6 +413,10 @@ class HomePageState extends State<HomePage> {
                               return InkWell(
                                 onTap: () async {
                                   if (currentTile.saved) {
+                                    if (gridMode == GridMode.ADD) {
+                                      return;
+                                    }
+
                                     // Cannot select an already saved tile
                                     await showDialog(
                                         context: context,
@@ -453,7 +477,7 @@ class HomePageState extends State<HomePage> {
                           ))),
                   Container(
                       padding: EdgeInsets.all(10.0),
-                      color: Colors.blue,
+                      color: Colors.white,
                       child: gridMode == GridMode.ADD
                           ? addBottomBar
                           : viewBottomBar)

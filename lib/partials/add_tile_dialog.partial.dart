@@ -102,12 +102,12 @@ class AddTileDialogState extends State<AddTileDialog> {
                             : "Aggiungi LoveTile",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 22.0,
+                          fontSize: 20.0,
                           color: Colors.blue,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 20.0),
+                      SizedBox(height: 15.0),
                       Text(
                         "Nota",
                         style: TextStyle(
@@ -117,7 +117,7 @@ class AddTileDialogState extends State<AddTileDialog> {
                         ),
                         textAlign: TextAlign.left,
                       ),
-                      SizedBox(height: 15.0),
+                      SizedBox(height: 10.0),
                       Expanded(
                         child: TextField(
                           controller: textController,
@@ -142,7 +142,7 @@ class AddTileDialogState extends State<AddTileDialog> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 20.0),
+                      SizedBox(height: 15.0),
                       Text(
                         "Categoria",
                         style: TextStyle(
@@ -153,75 +153,115 @@ class AddTileDialogState extends State<AddTileDialog> {
                         textAlign: TextAlign.left,
                       ),
                       SizedBox(height: 10.0),
-                      Expanded(
-                          child: StaggeredGridView.countBuilder(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: 15.0,
-                        mainAxisSpacing: 15.0,
-                        itemCount: categories.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          Category category = categories[index];
+                      widget.readonly
+                          ? Row(
+                              children: <Widget>[
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: widget.tile.category.color,
+                                    borderRadius: BorderRadius.circular(100.0),
+                                  ),
+                                  child: Icon(widget.tile.category.icon,
+                                      color: Colors.white),
+                                ),
+                                SizedBox(width: 15.0),
+                                Expanded(
+                                  child: Text(
+                                    "${widget.tile.category.name}",
+                                    style: TextStyle(fontSize: 18.0),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Expanded(
+                              child: StaggeredGridView.countBuilder(
+                              physics: NeverScrollableScrollPhysics(),
+                              primary: false,
+                              crossAxisCount: 4,
+                              crossAxisSpacing: 20.0,
+                              mainAxisSpacing: 20.0,
+                              itemCount: categories.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                Category category = categories[index];
 
-                          bool isSelected = selectedCategory != null &&
-                              selectedCategory.name == category.name;
+                                bool isSelected = selectedCategory != null &&
+                                    selectedCategory.name == category.name;
 
-                          return InkWell(
-                            onTap: () {
-                              if (widget.readonly) {
-                                return;
-                              }
+                                return InkWell(
+                                  onTap: () {
+                                    if (widget.readonly) {
+                                      return;
+                                    }
 
-                              if (selectedCategory != null &&
-                                  selectedCategory == category) {
-                                selectedCategory = null;
-                              } else {
-                                selectedCategory = category;
-                              }
+                                    if (selectedCategory != null &&
+                                        selectedCategory == category) {
+                                      selectedCategory = null;
+                                    } else {
+                                      selectedCategory = category;
+                                    }
 
-                              setState(() {});
-                            },
-                            focusColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            splashColor: Colors.transparent,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color:
-                                    isSelected ? category.color : Colors.white,
-                                borderRadius: BorderRadius.circular(100.0),
-                              ),
-                              child: Icon(
-                                category.icon,
-                                color:
-                                    isSelected ? Colors.white : category.color,
+                                    setState(() {});
+                                  },
+                                  focusColor: Colors.transparent,
+                                  highlightColor: Colors.transparent,
+                                  splashColor: Colors.transparent,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? category.color
+                                          : Colors.white,
+                                      borderRadius:
+                                          BorderRadius.circular(100.0),
+                                    ),
+                                    child: Icon(
+                                      category.icon,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : category.color,
+                                    ),
+                                  ),
+                                );
+                              },
+                              staggeredTileBuilder: (int index) {
+                                return StaggeredTile.count(1, 1);
+                              },
+                            )),
+                      SizedBox(height: 10.0),
+                      widget.readonly
+                          ? Container()
+                          : Text(
+                              selectedCategory != null
+                                  ? selectedCategory.name
+                                  : "Nessun categoria selezionata",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                color: Colors.grey,
                               ),
                             ),
-                          );
-                        },
-                        staggeredTileBuilder: (int index) {
-                          return StaggeredTile.count(1, 1);
-                        },
-                      )),
-                      SizedBox(height: 10.0),
-                      Text(
-                        selectedCategory != null
-                            ? selectedCategory.name
-                            : "Nessun categoria selezionata",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18.0,
-                          color: Colors.grey,
-                        ),
-                      ),
                       SizedBox(height: 10.0),
                       widget.readonly
                           ? Padding(
                               padding: EdgeInsets.only(bottom: 15.0),
                               child: Text(
-                                "Quando: ${widget.tile.formatWhen()}",
+                                "Quando",
                                 style: TextStyle(
                                   fontSize: 20.0,
                                   color: Color(0xff2980b9),
                                   fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.left,
+                              ))
+                          : Container(),
+                      widget.readonly
+                          ? Padding(
+                              padding: EdgeInsets.only(bottom: 15.0),
+                              child: Text(
+                                "${widget.tile.formatWhen()}",
+                                style: TextStyle(
+                                  fontSize: 18.0,
                                 ),
                                 textAlign: TextAlign.left,
                               ))
